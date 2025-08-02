@@ -23,4 +23,4 @@ CI-CD/
 3. Check the docs/ folder for detailed guides
 
 ## CI/CD Pipeline
-456
+777
