@@ -24,3 +24,4 @@ CI-CD/
 
 ## CI/CD Pipeline
 This project uses GitHub Actions for continuous integration and deployment to AWS.# Testing dev branch CI/CD workflow
+# Testing proper workflow with branch protection
