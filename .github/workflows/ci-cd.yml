@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install boto3
+        
+    - name: Run tests
+      run: |
+        echo "Running tests on ${{ github.ref_name }} branch..."
+        # We'll add actual tests later
+        
+    - name: Lint code
+      run: |
+        echo "Linting code..."
+        # We'll add actual linting later
+
+  # Different deployment strategies for different branches
+  deploy-dev:
+    needs: test
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Dev Environment
+      run: |
+        echo "Deploying to development environment..."
+        # We'll add AWS deployment here later
+
+  deploy-prod:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Production Environment
+      run: |
+        echo "Deploying to production environment..."
+        # We'll add AWS deployment here later
