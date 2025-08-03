@@ -158,3 +158,85 @@ resource "aws_glue_job" "log_etl_job" {
 
   depends_on = [aws_glue_crawler.log_crawler]
 }
+
+resource "aws_s3_bucket_notification" "trigger_lambda_on_upload" {
+  bucket = aws_s3_bucket.data_bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.glue_trigger_lambda.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "raw/"
+  }
+
+  depends_on = [aws_lambda_permission.allow_s3_invoke]
+}
+
+resource "aws_iam_role" "lambda_glue_role" {
+  name = "${var.prefix}-lambda-glue-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_glue_policy" {
+  name = "${var.prefix}-lambda-glue-policy"
+  role = aws_iam_role.lambda_glue_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:StartJobRun",
+          "glue:StartCrawler",
+          "logs:*",
+          "s3:GetObject"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "glue_trigger_lambda" {
+  function_name = "${var.prefix}-glue-trigger"
+  role          = aws_iam_role.lambda_glue_role.arn
+  handler       = "glue_trigger.lambda_handler"
+  runtime       = "python3.11"
+  timeout       = 30
+
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      ENV = "dev"
+    }
+  }
+}
+
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambda"
+  output_path = "${path.module}/../lambda.zip"
+}
+
+resource "aws_lambda_permission" "allow_s3_invoke" {
+  statement_id  = "AllowS3Invoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.glue_trigger_lambda.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.data_bucket.arn
+}
+
+
+
