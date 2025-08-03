@@ -133,3 +133,28 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Project     = var.project_name
   }
 }
+
+resource "aws_glue_job" "log_etl_job" {
+  name     = "log-etl-job"
+  role_arn = var.lambda_role_arn
+
+  command {
+    name            = "glueetl"
+    script_location = "s3://${var.s3_bucket_name}/scripts/load_etl.py"
+    python_version  = "3"
+  }
+
+  glue_version      = "4.0"
+  max_retries       = 0
+  timeout           = 10
+  number_of_workers = 2
+  worker_type       = "G.1X"
+
+  default_arguments = {
+    "--TempDir" = "s3://${var.s3_bucket_name}/temp/"
+    "--job-language" = "python"
+    "--enable-metrics" = "true"
+  }
+
+  depends_on = [aws_glue_crawler.log_crawler]
+}

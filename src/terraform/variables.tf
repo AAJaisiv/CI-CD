@@ -34,3 +34,17 @@ variable "glue_crawler_name" {
   type        = string
   default     = "log-data-crawler"
 }
+
+variable "glue_job_name" {
+  default = "log-etl-job"
+}
+
+variable "lambda_role_arn" {
+  description = "IAM role ARN used by Glue job"
+  type        = string
+}
+
+variable "s3_bucket_name" {
+  description = "Name of the S3 bucket for Glue script and temp"
+  type        = string
+}
