@@ -28,3 +28,8 @@ output "glue_crawler_name" {
   description = "Glue crawler name"
   value       = aws_glue_crawler.log_crawler.name
 }
+
+output "glue_job_name" {
+  value = aws_glue_job.log_etl_job.name
+}
+
