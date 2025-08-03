@@ -32,23 +32,8 @@ resource "aws_s3_bucket_versioning" "data_bucket_versioning" {
   }
 }
 
-# S3 Bucket for processed data
-resource "aws_s3_bucket" "processed_data_bucket" {
-  bucket = "${var.project_name}-${var.environment}-processed"
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-processed"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
-
-# S3 Bucket Versioning for processed
-resource "aws_s3_bucket_versioning" "processed_data_versioning" {
-  bucket = aws_s3_bucket.processed_data_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
+resource "aws_glue_catalog_database" "log_db" {
+  name = var.glue_database_name
 }
 
 
@@ -58,14 +43,17 @@ resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-${var.environment}-lambda-role"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
+        Effect = "Allow",
         Principal = {
-          Service = "lambda.amazonaws.com"
-        }
+          Service = [
+            "lambda.amazonaws.com",
+            "glue.amazonaws.com"
+          ]
+        },
+        Action = "sts:AssumeRole"
       }
     ]
   })
@@ -77,35 +65,71 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
+
 # IAM Policy for Lambda
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "${var.project_name}-${var.environment}-lambda-policy"
   role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
-        ]
+        ],
         Resource = "arn:aws:logs:*:*:*"
       },
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket"
-        ]
+        ],
         Resource = [
           aws_s3_bucket.data_bucket.arn,
           "${aws_s3_bucket.data_bucket.arn}/*"
         ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "glue:*"
+        ],
+        Resource = "*"
       }
     ]
   })
+}
+
+
+      resource "aws_glue_crawler" "log_crawler" {
+  name         = var.glue_crawler_name
+  role         = aws_iam_role.lambda_role.arn
+  database_name = aws_glue_catalog_database.log_db.name
+
+  s3_target {
+    path = "s3://${aws_s3_bucket.data_bucket.bucket}/raw/"
+  }
+
+  schema_change_policy {
+    delete_behavior = "LOG"
+    update_behavior = "UPDATE_IN_DATABASE"
+  }
+
+  configuration = jsonencode({
+    Version = 1.0,
+    CrawlerOutput = {
+      Partitions = { AddOrUpdateBehavior = "InheritFromTable" }
+    }
+  })
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
 }
