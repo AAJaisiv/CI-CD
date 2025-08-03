@@ -9,6 +9,17 @@ output "s3_bucket_arn" {
   value       = aws_s3_bucket.data_bucket.arn
 }
 
+output "processed_bucket_name" {
+  description = "Name of the processed data S3 bucket"
+  value       = aws_s3_bucket.processed_data_bucket.bucket
+}
+
+output "processed_bucket_arn" {
+  description = "ARN of the processed data S3 bucket"
+  value       = aws_s3_bucket.processed_data_bucket.arn
+}
+
+
 output "lambda_role_arn" {
   description = "ARN of the Lambda IAM role"
   value       = aws_iam_role.lambda_role.arn

@@ -32,6 +32,27 @@ resource "aws_s3_bucket_versioning" "data_bucket_versioning" {
   }
 }
 
+# S3 Bucket for processed data
+resource "aws_s3_bucket" "processed_data_bucket" {
+  bucket = "${var.project_name}-${var.environment}-processed"
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-processed"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# S3 Bucket Versioning for processed
+resource "aws_s3_bucket_versioning" "processed_data_versioning" {
+  bucket = aws_s3_bucket.processed_data_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
+
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-${var.environment}-lambda-role"
