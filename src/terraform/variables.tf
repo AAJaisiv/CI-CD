@@ -5,6 +5,12 @@ variable "aws_region" {
   default     = "us-east-2"
 }
 
+variable "prefix" {
+  description = "Prefix used to name AWS resources"
+  type        = string
+  default     = "ci-cd-portfolio-dev"
+}
+
 variable "project_name" {
   description = "Project name"
   type        = string
@@ -46,5 +52,12 @@ variable "lambda_role_arn" {
 
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket for Glue script and temp"
+  type        = string
+}
+
+
+# Lambda role name (used in aws_lambda_permission)
+variable "lambda_role_name" {
+  description = "IAM role name for Lambda execution"
   type        = string
 }
