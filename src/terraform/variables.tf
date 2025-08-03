@@ -22,3 +22,15 @@ variable "lambda_function_name" {
   type        = string
   default     = "data-processor"
 }
+
+variable "glue_database_name" {
+  description = "Name of the Glue database"
+  type        = string
+  default     = "log_data_catalog"
+}
+
+variable "glue_crawler_name" {
+  description = "Name of the Glue crawler"
+  type        = string
+  default     = "log-data-crawler"
+}
